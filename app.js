@@ -1,6 +1,9 @@
 const { EmbedBuilder, WebhookClient } = require('discord.js');
 const https = require('https');
 require('dotenv').config();
+const express = require('express');
+const app = express();
+const port = 3000;
 
 const webhookClient = new WebhookClient({ url: process.env.WEBHOOK_URL });
 
@@ -68,6 +71,16 @@ async function editGitHubStatsMessage() {
 
 // Call editGitHubStatsMessage() initially
 editGitHubStatsMessage();
+
+app.get('/fetch', async (req, res) => {
+    try {
+        await editGitHubStatsMessage();
+        res.status(200).send('GitHub stats update triggered.');
+    } catch (error) {
+        console.error('An error occurred:', error);
+        res.status(500).send('Error updating GitHub stats.');
+    }
+});
 
 // Set up setInterval to edit the message with updated GitHub data every 1 hour (3600 seconds)
 setInterval(editGitHubStatsMessage, 3600 * 1000); // 3600 seconds = 1 hour
@@ -140,3 +153,9 @@ async function fetchJson(url, options) {
         });
     });
 }
+
+
+// Start the Express server
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+});
