@@ -7,9 +7,34 @@ const port = 3000;
 
 const webhookClient = new WebhookClient({ url: process.env.WEBHOOK_URL });
 
+async function editAPIstatsMessage() {
+    try {
+        const apiStatus = await checkAPIStatus(); // Check API status
+
+        const messageId = '1158381114499530832';
+
+        const embed4 = new EmbedBuilder()
+            .setTitle('API Status')
+            .setColor(0x00FF00)
+            .addFields([
+                { name: 'Main API Status', value: apiStatus.mainAPIStatus },
+                { name: 'V2 API Status', value: apiStatus.v2APIStatus },
+            ])
+            .setFooter({ text: 'Last updated' })
+            .setTimestamp(); // Automatically adds a timestamp for "Last updated"
+        await webhookClient.editMessage(messageId, {
+            content: '',
+            embeds: [embed4],
+        });
+    } catch (error) {
+        console.error('An error occurred:', error);
+    }
+}
+
 async function editGitHubStatsMessage() {
     try {
         const githubData = await fetchGitHubData(); // Fetch GitHub data
+
 
         // Find the message you want to edit (Replace '123456789012345678' with the actual message ID)
         const messageId = '1158139607171477655';
@@ -21,13 +46,8 @@ async function editGitHubStatsMessage() {
             .setTitle('Info')
             .setColor(0x00FF00)
             .addFields([
-                // { name: 'Total Contributors', value: githubData.contributors.toString(), inline: true },
                 { name: 'Total Contributors', value: githubData.contributors.toString(), inline: true },
                 { name: 'Total Stars', value: githubData.stargazers_count.toString(), inline: true },
-                // { name: 'Closed Issues', value: githubData.issues.closed.toString()},
-                // { name: 'Total Pull Requests', value: githubData.pull_requests.total.toString(), inline: true },
-                // { name: 'Open Pull Requests', value: githubData.pull_requests.open.toString(), inline: true },
-                // { name: 'Closed Pull Requests', value: githubData.pull_requests.closed.toString(), inline: true },
             ])
             .setFooter({ text: 'Last updated' })
             .setTimestamp(); // Automatically adds a timestamp for "Last updated"
@@ -35,13 +55,9 @@ async function editGitHubStatsMessage() {
             .setTitle('Issues')
             .setColor(0x00FF00)
             .addFields([
-                // { name: 'Total Contributors', value: githubData.contributors.toString(), inline: true },
                 { name: 'Total Issues', value: githubData.issues.total.toString(), inline: true },
                 { name: 'Open Issues', value: githubData.issues.open.toString(), inline: true },
                 { name: 'Closed Issues', value: githubData.issues.closed.toString(), inline: true },
-                // { name: 'Total Pull Requests', value: githubData.pull_requests.total.toString(), inline: true },
-                // { name: 'Open Pull Requests', value: githubData.pull_requests.open.toString(), inline: true },
-                // { name: 'Closed Pull Requests', value: githubData.pull_requests.closed.toString(), inline: true },
             ])
             .setFooter({ text: 'Last updated' })
             .setTimestamp(); // Automatically adds a timestamp for "Last updated"
@@ -49,16 +65,13 @@ async function editGitHubStatsMessage() {
             .setTitle('Pull Requests')
             .setColor(0x00FF00)
             .addFields([
-                // { name: 'Total Contributors', value: githubData.contributors.toString(), inline: true },
-                // { name: 'Total Issues', value: githubData.issues.total.toString(), inline: true },
-                // { name: 'Open Issues', value: githubData.issues.open.toString(), inline: true },
-                // { name: 'Closed Issues', value: githubData.issues.closed.toString(), inline: true },
                 { name: 'Total Pull Requests', value: githubData.pull_requests.total.toString(), inline: true },
                 { name: 'Open Pull Requests', value: githubData.pull_requests.open.toString(), inline: true },
                 { name: 'Closed Pull Requests', value: githubData.pull_requests.closed.toString(), inline: true },
             ])
             .setFooter({ text: 'Last updated' })
             .setTimestamp(); // Automatically adds a timestamp for "Last updated"
+
 
         await webhookClient.editMessage(messageId, {
             content: 'GitHub Stats', // Optional content update
@@ -71,10 +84,13 @@ async function editGitHubStatsMessage() {
 
 // Call editGitHubStatsMessage() initially
 editGitHubStatsMessage();
+editAPIstatsMessage();
 
 app.get('/fetch', async (req, res) => {
     try {
         await editGitHubStatsMessage();
+        await editAPIstatsMessage();
+        // await checkAPIStatus();
         res.status(200).send('GitHub stats update triggered.');
     } catch (error) {
         console.error('An error occurred:', error);
@@ -82,8 +98,54 @@ app.get('/fetch', async (req, res) => {
     }
 });
 
+app.get('/fetchAPI', async (req, res) => {
+    try {
+        
+        await checkAPIStatus();
+        res.status(200).send('GitHub stats update triggered.');
+    } catch (error) {
+        console.error('An error occurred:', error);
+        res.status(500).send('Error updating GitHub stats.');
+    }
+});
+
+async function fetchAPI() {
+    await makeHTTPGetRequest('https://stats-digitomize-discord.onrender.com/fetch');
+}
+
+
 // Set up setInterval to edit the message with updated GitHub data every 1 hour (3600 seconds)
 setInterval(editGitHubStatsMessage, 3600 * 1000); // 3600 seconds = 1 hour
+setInterval(fetchAPI, 600 * 1000); // 10min
+
+
+async function checkAPIStatus() {
+    try {
+        const mainAPIStatus = await makeHTTPGetRequest('https://digitomize-backend-21za.onrender.com/api/contests');
+        const v2APIStatus = await makeHTTPGetRequest('https://www.v2api.digitomize.com/contests');
+
+        return { mainAPIStatus, v2APIStatus };
+    } catch (error) {
+        console.error('Error checking API status:', error);
+        return { mainAPIStatus: 'Error', v2APIStatus: 'Error' };
+    }
+}
+
+function makeHTTPGetRequest(url) {
+    return new Promise((resolve, reject) => {
+        https.get(url, (res) => {
+            if (res.statusCode === 200) {
+                resolve(':green_circle: Working');
+            } else {
+                resolve(':red_circle: Not Working');
+            }
+        }).on('error', (error) => {
+            console.error('Error making HTTP request:', error);
+            resolve('Error');
+        });
+    });
+}
+
 
 // Function to fetch GitHub data
 async function fetchGitHubData() {
