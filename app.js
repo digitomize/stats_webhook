@@ -115,7 +115,7 @@ async function fetchAPI() {
 
 
 // Set up setInterval to edit the message with updated GitHub data every 1 hour (3600 seconds)
-setInterval(editGitHubStatsMessage, 3600 * 1000); // 3600 seconds = 1 hour
+// setInterval(editGitHubStatsMessage, 3600 * 1000); // 3600 seconds = 1 hour
 setInterval(fetchAPI, 600 * 1000); // 10min
 
 
