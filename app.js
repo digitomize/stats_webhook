@@ -121,7 +121,7 @@ setInterval(fetchAPI, 600 * 1000); // 10min
 
 async function checkAPIStatus() {
     try {
-        const mainAPIStatus = await makeHTTPGetRequest('https://digitomize-backend-21za.onrender.com/api/contests');
+        const mainAPIStatus = await makeHTTPGetRequest('https://api.digitomize.com/contests');
         const v2APIStatus = await makeHTTPGetRequest('https://www.v2api.digitomize.com/contests');
 
         return { mainAPIStatus, v2APIStatus };
